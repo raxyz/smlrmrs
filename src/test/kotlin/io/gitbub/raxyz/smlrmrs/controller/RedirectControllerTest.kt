@@ -1,9 +1,14 @@
 package io.gitbub.raxyz.smlrmrs.controller
 
 import io.gitbub.raxyz.smlrmrs.SmlrmrsApplication
+import io.gitbub.raxyz.smlrmrs.service.KeyMapperService
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.InjectMocks
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
@@ -24,22 +29,33 @@ class RedirectControllerTest {
 
     lateinit var mockMvc: MockMvc
 
+    @Mock
+    lateinit var service: KeyMapperService
+
+    @Autowired
+    @InjectMocks
+    lateinit var controller: RedirectController
+
     @Before
     fun init() {
+        MockitoAnnotations.initMocks(this)
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(webApplicationContext)
                 .build()
+
+        Mockito.`when`(service.getLink(PATH)).thenReturn(KeyMapperService.Get.Link(HEADER_VALUE))
+        Mockito.`when`(service.getLink(BAD_PATH)).thenReturn(KeyMapperService.Get.Link(BAD_PATH))
+
     }
 
-    private val PATH = "/aAbBcCdD"
+    private val PATH = "aAbBcCdD"
     private val REDIRECT_STATUS: Int = 302
     private val HEADER_NAME = "Location"
     private val HEADER_VALUE = "https://www.google.com"
 
-
     @Test
     fun controllerMustRedirectUsWhenRequestIsSuccessful() {
-        mockMvc.perform(get(PATH))
+        mockMvc.perform(get("/$PATH"))
                 .andExpect(status().`is`(REDIRECT_STATUS))
                 .andExpect(header().string(HEADER_NAME, HEADER_VALUE))
     }
@@ -49,7 +65,7 @@ class RedirectControllerTest {
 
     @Test
     fun controllerMustReturn404IfBadKey() {
-        mockMvc.perform(get(BAD_PATH))
+        mockMvc.perform(get("/$BAD_PATH"))
                 .andExpect(status().`is`(NOT_FOUND))
     }
 }
